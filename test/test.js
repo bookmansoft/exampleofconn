@@ -24,7 +24,7 @@ describe('测试', () => {
         let sig = secp256k1.sign(msgBuf, buf);
         console.log('sig', sig.signature.toString('hex'));
         sig = secp256k1.signatureNormalize(sig.signature);
-        console.log('nor', sig.toString('hex'));
+        console.log('normalize', sig.toString('hex'));
         sig = secp256k1.signatureExport(sig);
         console.log('dre', sig.toString('hex'));
     });

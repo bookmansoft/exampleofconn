@@ -183,33 +183,25 @@ function pad4(num) {
 * @param {*} time 
 */
 async function waitblock(block, time) {
-  block = block || 1;
+	block = block || 1;
 
-  let ret = await remote.execute('miner.check', []);
-  if(!!ret.mode) {
-      //#region 在自动记账模式下的执行模式
-      let diff = -1, height = 0;
-      while(diff < block) {
-          let ret = await remote.execute('block.count', []);
-          if(diff == -1) {
-              height = ret;
-              diff = 0;
-          } else {
-              diff = ret - height;
-          }
-          await remote.wait(3000);
-      }
-      //#endregion
-  } else {
-      //#region 在手动记账模式下的执行模式
-      ret = await remote.execute('miner.generate.admin', [block]);
-      assert(!ret.error);
-      //#endregion
-  }
+	//#region 在自动记账模式下的执行模式
+	let diff = -1, height = 0;
+	while(diff < block) {
+		let ret = await remote.execute('block.count', []);
+		if(diff == -1) {
+			height = ret;
+			diff = 0;
+		} else {
+			diff = ret - height;
+		}
+		await remote.wait(3000);
+	}
+	//#endregion
 
-  if(!!time) {
+	if(!!time) {
       await remote.wait(time);
-  }
+	}
 }
 
 function json(products) {

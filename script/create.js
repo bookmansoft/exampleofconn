@@ -268,14 +268,7 @@ async function waitblock(block, time) {
 			diff = ret - height;
 		}
 
-		ret = await remote.execute('miner.check', []);
-		assert(!ret.error);
-		if(!ret.mode) {
-			await remote.execute('miner.generate.admin', [block]);
-			await remote.wait(1000);
-		} else {
-			await remote.wait(3000);
-		}
+		await remote.wait(3000);
 	}
 
 	if(!!time) {
