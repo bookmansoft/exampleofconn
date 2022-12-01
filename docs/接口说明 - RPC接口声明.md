@@ -268,6 +268,65 @@ addr        |   转移的目标地址
 pid         |   资产唯一编号
 openid      |   发起账号
 
+### 批量创建数字资产
+
+```bash
+#(cid|oid|gold|pid)(n,) 是逗分道具数组，即"作者编码|分类码|含金量|道具编号,..."，如不带道具编号，系统会随机编码
+prop.createlist (cid|oid|gold|pid)(n,) [openid]: 批量创建道具 道具信息数组 [发起账户]
+```
+
+[POST-Request]
+```json
+{
+    "method":   "prop.createlist",           //接口方法名称
+    "params":   [
+      "作者编码|分类码|含金量|道具编号, ...",  //用逗分字符串形式，一次性包含多笔NFT铸造信息，含金量目前固定填10000
+    ],
+    "wid":      "primary",                  //钱包编码，固定填写 primary
+    "cid":      "**",                       //操作员编码
+    "token":    "",                         //[访问令牌，需要计算得出]
+    "sig":      ""                          //[报文签名，需要计算得出]
+}
+```
+
+[POST-Response]
+```json
+{
+  "code": 0,
+  "error": null,
+  "result": [
+    {
+      "cid": "c5f7d5e0-1ecf-11ec-9a4f-25dee2b1d9fd",  //作者编码
+      "oid": "papercut-pc-hundred-0001-0001",         //附加码
+      "gold": 10000,                                  //含金量
+      "pid": "c83fca10-1ecf-11ec-9a4f-25dee2b1d9fd",  //NFT唯一码
+      "txid": "2eadcca00c801c381fd5ff39e6efa2211a658c96ae71d6914613ca9406fa9020", //NFT所在交易的哈希值    
+      "index": 0,                                     //NFT在所在交易内的索引号(每笔交易可能包含多个NFT)
+    },
+    {
+      "cid": "c5f7d5e0-1ecf-11ec-9a4f-25dee2b1d9fd",  //作者编码
+      "oid": "papercut-pc-hundred-0001-0002",         //附加码
+      "gold": 10000,                                  //含金量
+      "pid": "c83fca10-1ecf-11ec-9a4f-25dee2b1d9tt",  //NFT唯一码
+      "txid": "2eadcca00c801c381fd5ff39e6efa2211a658c96ae71d6914613ca9406fa9020", //NFT所在交易的哈希值    
+      "index": 1,                                     //NFT在所在交易内的索引号(每笔交易可能包含多个NFT)
+    },
+  ]
+}
+```
+
+### 批量转移数字资产
+
+```bash
+prop.sendlist (addr|txid|index)(n,) [openid]: 批量转移道具 道具数组(目标地址|道具所在交易哈希|交易内索引) [子账户]'
+```
+
+Property | Description
+---|---
+array       |   逗分字符串组成的道具数组，格式为 "目标地址|道具所在交易哈希|交易内索引, ..."
+openid      |   发起账号
+
+
 ### 转账 tx.send
 
 该指令利用地址字符串指定接收单位，向其转账指定数额的通证
