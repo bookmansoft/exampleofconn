@@ -45,7 +45,6 @@ describe('GIP0024 电子签章', function() {
 
     it('分发通证', async () => {
         await remote.execute('tx.send', [env.bob.address, 100000000]);
-        await remote.execute('tx.send', [env.bob.address, 100000000]);
 
         await remote.execute('miner.generate.admin', [1]);
         await remote.wait(1000);
@@ -57,10 +56,10 @@ describe('GIP0024 电子签章', function() {
                 hash: env.content(),    //实体证书内容哈希(64字节HEX字符串)
                 height: 0,              //有效期，填0表示使用默认值
             },
-            env.bob.address,            //见证地址
+            env.bob.address,            //见证地址, 当前钱包必须拥有该地址的控制权
         ]);
         assert(ret.erid);
-        env.alice.erid.unshift(ret.erid); //存储erid
+        env.alice.erid.unshift(ret.erid); //缓存erid
 
         await remote.execute('miner.generate.admin', [1]);
         await remote.wait(1000);
@@ -73,7 +72,7 @@ describe('GIP0024 电子签章', function() {
         assert(ret.list[0].erid == erid);
     });
 
-    it('查询列表：查询证书列表', async () => {
+    it('查询列表：查询本地证书列表', async () => {
         let erid = env.alice.erid[0];
 
         let ret = await remote.execute('ca.list.me', [[['erid', erid]]]);
@@ -106,9 +105,73 @@ describe('GIP0024 电子签章', function() {
         assert(ret.count == 1 && ret.list[0].erid == env.alice.erid[0]);
     });
 
-    it('验证证书: 验证证书的有效性', async () => {
+    it('验证证书: 验证指定证书已失效', async () => {
         let ret = await remote.execute('ca.verify', [env.alice.erid[0]]);
         assert(ret && !ret.verify);
+    });
+
+    it('签署电子合同: Alice和Bob签署电子合同', async () => {
+        //Alice本地签署合同
+        env.alice.agreement = verify.signData(agreement, {
+            network: 'testnet',
+            alice_prv: env.alice.prikey,
+            alice_pub: env.alice.pubkey,
+            alice_add: env.alice.address,
+            witness: true,
+            cid: 'bookman',
+        });
+        // agreement: {
+        //     data: {
+        //         title: 'agreement',
+        //         body: 'hello world',
+        //         cid: 'bookman',
+        //         addr: 'tb1qjjzznckmdfha7jty7v8vael4llr2047ufvwe9c',
+        //         pubkey: '032dcb7ad0186098d0be4f425c71cac5da0328b0de641a9721b6d003cabb707209'
+        //     },
+        //     sig: '*'
+        // }
+
+        //Bob开始签署合同
+        //1. 校验合同签名有消息
+        assert.strictEqual(true, verify.verifyData(env.alice.agreement));
+        //2. 取合同内容的哈希值
+        let content = utils.sha256(JSON.stringify(env.alice.agreement.data)).toString('hex');
+        //3. 将合同哈希值和合同签名公钥，使用见证指令上链
+        let ret = await remote.execute('ca.issue.public', [
+            {
+                hash: content,                         //存证哈希
+                height: 0,                             //有效高度
+            },
+            env.bob.address,                          //见证地址
+            env.alice.agreement.data.pubkey,          //目标地址公钥
+        ]);
+        assert(ret.erid);
+        env.bob.erid.unshift(ret.erid);
+
+        await remote.execute('miner.generate.admin', [1]);
+    });
+
+    it('验证电子合同: 第三方检索验证Alice和Bob签署的电子合同', async () => {
+        //检索合同
+        let ret = await remote.execute('ca.list', [[['erid', env.bob.erid[0]]]]);
+        /** ret.list[0]
+            {
+                oper: 'erIssue',
+                erid: '9ad56350-caa2-11ea-af83-0768c3780f90',
+                witness: '039ba89a71f7b16a5acacb7f7231f4812ae81f479277111ec4422f279dfa36f107',
+                validHeight: 2618,
+                signature: '3044022024972da0e328b83ce7e04812eb23379203f632661271c1da8cc757764fcb7f8902202d2f59c59632edc6cb730537f1b33da13df5c6ff029f097cc98cdc47a588eb77',
+                source: {
+                    subjectName: '9ad56350-caa2-11ea-af83-0768c3780f90',
+                    pubkey: '02eb41fd23bc2f6de753fd685ab5154f81e476e9879463134a40d53c0bdec4c6a9',
+                    subjectHash: 'cdfbc9c7f626c834eab70c05654391fecdc5e47412157b2d6e2186eeaae9ef12'
+                },
+                wid: 0,
+                account: ''
+            }
+         */
+
+        await verifyContract(env.alice.agreement, ret.list[0]);
     });
 
     it('机构注册: CPA注册', async () => {
@@ -178,70 +241,6 @@ describe('GIP0024 电子签章', function() {
     it('查询信用: 查询CA信用等级', async () => {
         let ret = await remote.execute('ca.rank', [env.cpa.cid]);
         assert(!!ret && ret > 0);
-    });
-
-    it('签署电子合同: Alice和Bob签署电子合同', async () => {
-        //Alice本地签署合同
-        env.alice.agreement = verify.signData(agreement, {
-            network: 'testnet',
-            alice_prv: env.alice.prikey,
-            alice_pub: env.alice.pubkey,
-            alice_add: env.alice.address,
-            witness: true,
-            cid: 'bookman',
-        });
-        // agreement: {
-        //     data: {
-        //         title: 'agreement',
-        //         body: 'hello world',
-        //         cid: 'bookman',
-        //         addr: 'tb1qjjzznckmdfha7jty7v8vael4llr2047ufvwe9c',
-        //         pubkey: '032dcb7ad0186098d0be4f425c71cac5da0328b0de641a9721b6d003cabb707209'
-        //     },
-        //     sig: '*'
-        // }
-
-        //Bob开始签署合同
-        //1. 校验合同签名有消息
-        assert.strictEqual(true, verify.verifyData(env.alice.agreement));
-        //2. 取合同内容的哈希值
-        let content = utils.sha256(JSON.stringify(env.alice.agreement.data)).toString('hex');
-        //3. 将合同哈希值和合同签名公钥，使用见证指令上链
-        let ret = await remote.execute('ca.issue.public', [
-            {
-                hash: content,                         //存证哈希
-                height: 0,                             //有效高度
-            },
-            env.bob.address,                          //见证地址
-            env.alice.agreement.data.pubkey,          //目标地址公钥
-        ]);
-        assert(ret.erid);
-        env.bob.erid.unshift(ret.erid);
-
-        await remote.execute('miner.generate.admin', [1]);
-    });
-
-    it('验证电子合同: 第三方检索验证Alice和Bob签署的电子合同', async () => {
-        //检索合同
-        let ret = await remote.execute('ca.list', [[['erid', env.bob.erid[0]]]]);
-        /** ret.list[0]
-            {
-                oper: 'erIssue',
-                erid: '9ad56350-caa2-11ea-af83-0768c3780f90',
-                witness: '039ba89a71f7b16a5acacb7f7231f4812ae81f479277111ec4422f279dfa36f107',
-                validHeight: 2618,
-                signature: '3044022024972da0e328b83ce7e04812eb23379203f632661271c1da8cc757764fcb7f8902202d2f59c59632edc6cb730537f1b33da13df5c6ff029f097cc98cdc47a588eb77',
-                source: {
-                    subjectName: '9ad56350-caa2-11ea-af83-0768c3780f90',
-                    pubkey: '02eb41fd23bc2f6de753fd685ab5154f81e476e9879463134a40d53c0bdec4c6a9',
-                    subjectHash: 'cdfbc9c7f626c834eab70c05654391fecdc5e47412157b2d6e2186eeaae9ef12'
-                },
-                wid: 0,
-                account: ''
-            }
-         */
-
-        await verifyContract(env.alice.agreement, ret.list[0]);
     });
 
     before(async ()=>{
