@@ -7,11 +7,11 @@
  * 2. 道具的发行、流转、回收、竞拍
  */
 
-const uuid = require('uuid/v1')
-const assert = require('assert')
-const remote = (require('../scripts/connector'))({
-    type:   'testnet',
-});
+const uuid = require('uuid/v1');
+const assert = require('assert');
+const VALLNET = require('../lib/index');
+const config = require('../lib/config');    //引入配置对象
+const remote = new VALLNET(config);         //创建RPC实例
 
 let env = {
     cp: {
@@ -60,10 +60,6 @@ describe('传家宝业务流程', () => {
         }
         await remote.execute('miner.setsync.admin', [true]);
         await remote.wait(500);
-    });
-
-    after(()=>{
-        remote.close();
     });
 
     it('机构注册：厂商注册', async () => {

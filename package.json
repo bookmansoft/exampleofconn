@@ -1,6 +1,6 @@
 {
   "name": "exampleforconn",
-  "version": "1.0.0",
+  "version": "4.2.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,10 +10,10 @@
   "author": "bookmansoft",
   "license": "ISC",
   "dependencies": {
-    "uuid": "^3.4.0",
-    "mocha": "^8.4.0",
-    "crypto": "^1.0.1",
-    "node-fetch": "^2.6.1",
+    "uuid": "3.4.0",
+    "mocha": "8.4.0",
+    "crypto": "1.0.1",
+    "node-fetch": "2.6.1",
     "secp256k1": "3.8.0"
   }
 }

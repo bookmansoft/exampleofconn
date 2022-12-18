@@ -1,12 +1,10 @@
 /**
  * 联机单元测试：本地全节点提供运行时环境
  */
-const uuid = require('uuid/v1')
-const VALLNET = require('../lib/index')
-const config = require('../lib/config'); //引入配置对象
-
-//创建RPC实例
-const remote = new VALLNET(config);
+const uuid = require('uuid/v1');
+const config = require('../lib/config');    //引入配置对象
+const VALLNET = require('../lib/index');
+const remote = new VALLNET(config);         //创建RPC实例
 
 //在多个测试用例间传递中间结果的缓存变量
 let env = {
