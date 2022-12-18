@@ -241,6 +241,47 @@ Post Output
 }
 ```
 
+### 判断地址是否归属当前节点
+
+```bash
+# 查询钱包是否包含指定地址 地址参数 
+address.has address
+```
+
+Property | Description
+---|---
+address  | 地址参数
+
+### 见证电子存证
+
+```bash
+# 见证一份电子存证 签发证书 证书对象 见证地址 [证书公钥]
+ca.issue.public cert witness [pubkey]
+```
+
+Property   | Description
+---|---
+cert       | 证书对象，包含名称、内容、有效期、索引等字段
+cert.hash  | 证书内容哈希(64字节HEX字符串)
+cert.height| 有效期限, 以相对块高度表示, 填0表示截止(当前高度+2016)前保持有效
+witness    | 见证地址，注意当前节点必须包含该地址控制权
+pubkey     | 证书签名公钥，用于电子合同场景
+
+### 吊销电子存证
+
+```bash
+# 吊销指定电子存证 废止信息数组(支持批处理)
+ca.abolish.public [[erid height [openid]], ...]
+```
+
+Property  | Description
+---|---
+ar        | 废止信息数组
+ar.erid   | 废止证书编号
+ar.height | 废止高度, 以相对块高度表示, 0表示立即生效
+
+备注: 只有见证发起人才有权限废止已发布见证
+
 ### 创建数字资产
 
 ```bash
